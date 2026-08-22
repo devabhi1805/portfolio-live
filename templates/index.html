@@ -50,7 +50,10 @@
         <div class="text-left w-full lg:w-auto">
             <h1 class="text-2xl sm:text-3xl font-extrabold text-blue-400 tracking-tight leading-tight">FINAVENUE PORTFOLIO</h1>
             <div class="text-xs sm:text-sm text-gray-400 flex flex-wrap items-center gap-2 sm:gap-3 mt-2">
-                <span class="bg-gray-800 px-2 py-1 rounded-md">Total: <span class="font-bold text-white">{{ filteredStocks.length }} / {{ stocks.length }}</span></span>
+                <span class="bg-gray-800 px-2 py-1 rounded-md shadow-sm">Total: <span class="font-bold text-white">{{ filteredStocks.length }} / {{ stocks.length }}</span></span>
+                <span class="bg-blue-900/40 text-blue-300 border border-blue-800/50 px-2.5 py-1 rounded-md font-bold shadow-sm">
+                    Value: ₹ {{ totalPortfolioValue }}
+                </span>
                 <span class="font-medium text-gray-300 bg-gray-800 px-2 py-1 rounded-md">{{ currentTime }}</span>
                 <span :class="['font-bold px-2 py-1 rounded-md border text-xs', marketColor, marketBorder]">{{ marketStatus }}</span>
             </div>
@@ -268,6 +271,10 @@
                     return this.stocks;
                 }
                 return this.stocks.filter(s => s.sector === this.selectedSector);
+            },
+            totalPortfolioValue() {
+                const total = this.filteredStocks.reduce((sum, stock) => sum + (stock.value || 0), 0);
+                return total.toLocaleString('en-IN', { maximumFractionDigits: 2 });
             }
         },
         mounted() {
@@ -387,7 +394,14 @@
                         body: formData
                     });
                     
-                    const data = await response.json();
+                    let data;
+                    try {
+                        data = await response.json();
+                    } catch (jsonError) {
+                        this.error = "Format not found.";
+                        this.uploading = false;
+                        return;
+                    }
                     
                     if (response.ok) {
                         this.stocks = data.stocks;
@@ -395,10 +409,10 @@
                         this.successMsg = "PDF Parsed Successfully!";
                         setTimeout(() => this.successMsg = null, 4000);
                     } else {
-                        this.error = data.error || "An error occurred during upload.";
+                        this.error = data.error || "Format not found.";
                     }
                 } catch (e) {
-                    this.error = "Network error. Make sure the local server is running.";
+                    this.error = "Format not found.";
                 } finally {
                     this.uploading = false;
                 }
