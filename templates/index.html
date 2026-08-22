@@ -37,22 +37,22 @@
     <div class="bg-gray-800 text-sm font-semibold border-b border-gray-700 p-2 flex shrink-0">
         <div class="flex-1 marquee text-green-400">
             <p>
-                📈 <b>GLOBAL INDICES (LIVE):</b> NIFTY 50: 24,500 (+0.5%) &nbsp;|&nbsp; NSE EMERGE: 14,200 (+0.6%) &nbsp;|&nbsp; S&P 500: 5,100 (+1.2%) &nbsp;|&nbsp; NASDAQ: 16,200 (+1.5%) &nbsp;|&nbsp; FTSE 100: 7,900 (-0.2%) &nbsp;|&nbsp; NIKKEI 225: 39,000 (+0.8%) 
+                ðŸ“ˆ <b>GLOBAL INDICES (LIVE):</b> NIFTY 50: 24,500 (+0.5%) &nbsp;|&nbsp; NSE EMERGE: 14,200 (+0.6%) &nbsp;|&nbsp; S&P 500: 5,100 (+1.2%) &nbsp;|&nbsp; NASDAQ: 16,200 (+1.5%) &nbsp;|&nbsp; FTSE 100: 7,900 (-0.2%) &nbsp;|&nbsp; NIKKEI 225: 39,000 (+0.8%) 
                 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-                🛢️ <b>COMMODITIES (LIVE):</b> GOLD: $2,350/oz (+0.4%) &nbsp;|&nbsp; SILVER: $28.5/oz (+1.1%) &nbsp;|&nbsp; CRUDE OIL: $82/bbl (-0.5%) &nbsp;|&nbsp; NATURAL GAS: $2.1/MMBtu (+2.0%) &nbsp;|&nbsp; COPPER: $4.5/lb (+0.3%)
+                ðŸ›¢ï¸ <b>COMMODITIES (LIVE):</b> GOLD: $2,350/oz (+0.4%) &nbsp;|&nbsp; SILVER: $28.5/oz (+1.1%) &nbsp;|&nbsp; CRUDE OIL: $82/bbl (-0.5%) &nbsp;|&nbsp; NATURAL GAS: $2.1/MMBtu (+2.0%) &nbsp;|&nbsp; COPPER: $4.5/lb (+0.3%)
             </p>
         </div>
     </div>
 
     <!-- Header & Upload -->
-    <div class="p-4 shrink-0 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 border-b border-gray-700 bg-gray-900 shadow-md z-10 w-full">
+    <div class="p-4 shrink-0 flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 xl:gap-6 border-b border-gray-700 bg-gray-900 shadow-md z-10 w-full">
         <!-- Title & Stats -->
-        <div class="text-left w-full lg:w-auto">
+        <div class="text-left w-full xl:w-auto shrink-0">
             <h1 class="text-2xl sm:text-3xl font-extrabold text-blue-400 tracking-tight leading-tight">FINAVENUE PORTFOLIO</h1>
             <div class="text-xs sm:text-sm text-gray-400 flex flex-wrap items-center gap-2 sm:gap-3 mt-2">
                 <span class="bg-gray-800 px-2 py-1 rounded-md shadow-sm">Total: <span class="font-bold text-white">{{ filteredStocks.length }} / {{ stocks.length }}</span></span>
                 <span class="bg-blue-900/40 text-blue-300 border border-blue-800/50 px-2.5 py-1 rounded-md font-bold shadow-sm">
-                    Value: ₹ {{ totalPortfolioValue }}
+                    Value: â‚¹ {{ totalPortfolioValue }}
                 </span>
                 <span class="font-medium text-gray-300 bg-gray-800 px-2 py-1 rounded-md">{{ currentTime }}</span>
                 <span :class="['font-bold px-2 py-1 rounded-md border text-xs', marketColor, marketBorder]">{{ marketStatus }}</span>
@@ -60,30 +60,30 @@
         </div>
         
         <!-- Controls & Actions -->
-        <div class="flex flex-col sm:flex-row flex-wrap lg:flex-nowrap items-stretch sm:items-center gap-3 sm:gap-4 w-full lg:w-auto">
+        <div class="flex flex-wrap items-center justify-start xl:justify-end gap-3 sm:gap-4 w-full">
             
             <!-- Sector Filter -->
-            <div class="flex items-center gap-2 w-full sm:w-auto bg-gray-800 px-3 py-1.5 rounded-lg border border-gray-700">
+            <div class="flex items-center gap-2 bg-gray-800 px-3 py-1.5 rounded-lg border border-gray-700 shrink-0">
                 <label class="text-sm text-gray-400 font-semibold whitespace-nowrap">Sector:</label>
-                <select v-model="selectedSector" class="bg-transparent text-white text-sm focus:outline-none w-full cursor-pointer">
+                <select v-model="selectedSector" class="bg-transparent text-white text-sm focus:outline-none cursor-pointer">
                     <option v-for="sec in uniqueSectors" :key="sec" :value="sec" class="bg-gray-800">{{ sec }}</option>
                 </select>
             </div>
             
             <!-- Action Buttons -->
-            <div class="flex flex-row items-center gap-2 w-full sm:w-auto">
-                <button @click="exportToCSV" class="flex-1 sm:flex-none bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-sm font-bold transition shadow-sm">
-                    📥 CSV
+            <div class="flex items-center gap-2 shrink-0">
+                <button @click="exportToCSV" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-sm font-bold transition shadow-sm whitespace-nowrap">
+                    ðŸ“¥ CSV
                 </button>
-                <button @click="refreshLivePrices" :disabled="refreshing" class="flex-1 sm:flex-none bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-bold transition disabled:opacity-50 shadow-sm flex justify-center items-center">
-                    <span v-if="refreshing" class="mr-2 animate-spin">⏳</span>
-                    {{ refreshing ? 'Fetching...' : '🔄 Refresh' }}
+                <button @click="refreshLivePrices" :disabled="refreshing" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-bold transition disabled:opacity-50 shadow-sm flex items-center whitespace-nowrap">
+                    <span v-if="refreshing" class="mr-2 animate-spin">â³</span>
+                    {{ refreshing ? 'Fetching...' : 'ðŸ”„ Refresh' }}
                 </button>
             </div>
 
             <!-- Upload Form -->
-            <div class="bg-gray-800 p-1.5 rounded-lg flex flex-col sm:flex-row items-stretch sm:items-center gap-2 border border-gray-600 w-full sm:w-auto shadow-sm">
-                <input type="file" ref="fileInput" accept=".pdf" class="text-sm text-gray-400 w-full file:mr-2 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-bold file:bg-gray-700 file:text-white hover:file:bg-gray-600 file:cursor-pointer cursor-pointer"/>
+            <div class="bg-gray-800 p-1.5 rounded-lg flex items-center gap-2 border border-gray-600 shadow-sm shrink-0">
+                <input type="file" ref="fileInput" accept=".pdf" class="text-sm text-gray-400 max-w-[200px] file:mr-2 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-bold file:bg-gray-700 file:text-white hover:file:bg-gray-600 file:cursor-pointer cursor-pointer"/>
                 <button @click="uploadFile" :disabled="uploading" class="bg-green-600 hover:bg-green-500 text-white px-4 py-2 rounded-md text-sm font-bold transition disabled:opacity-50 whitespace-nowrap">
                     {{ uploading ? 'Parsing...' : 'Upload PDF' }}
                 </button>
@@ -104,7 +104,7 @@
         
         <!-- Empty State -->
         <div v-if="filteredStocks.length === 0" class="flex flex-col items-center justify-center h-full text-center p-8 bg-gray-900 border border-gray-800 rounded-xl shadow-inner">
-            <div class="text-4xl mb-4">📊</div>
+            <div class="text-4xl mb-4">ðŸ“Š</div>
             <p class="text-gray-400 mb-2 text-lg">No stocks found.</p>
             <p class="text-blue-400 font-bold">Please click 'Upload PDF' in the top right to fetch your live Qty & Prices.</p>
         </div>
@@ -128,11 +128,11 @@
                     </div>
                     <div>
                         <span class="text-gray-500 text-[10px] uppercase tracking-wider block font-semibold mb-0.5">Curr Price</span>
-                        <span class="font-mono text-gray-200 font-medium">₹ {{ stock.price }}</span>
+                        <span class="font-mono text-gray-200 font-medium">â‚¹ {{ stock.price }}</span>
                     </div>
                     <div>
                         <span class="text-gray-500 text-[10px] uppercase tracking-wider block font-semibold mb-0.5">Value</span>
-                        <span class="font-mono text-blue-300 font-medium">₹ {{ stock.value.toLocaleString('en-IN') }}</span>
+                        <span class="font-mono text-blue-300 font-medium">â‚¹ {{ stock.value.toLocaleString('en-IN') }}</span>
                     </div>
                     <div>
                         <span class="text-gray-500 text-[10px] uppercase tracking-wider block font-semibold mb-0.5">Today's Gain</span>
@@ -170,11 +170,11 @@
                             <td class="px-4 py-3 font-semibold text-gray-100">{{ stock.name }}</td>
                             <td class="px-4 py-3 text-gray-400 text-xs">{{ stock.sector }}</td>
                             <td class="px-4 py-3 font-mono text-gray-300">{{ stock.qty }}</td>
-                            <td class="px-4 py-3 font-mono text-gray-300">₹ {{ stock.price }}</td>
+                            <td class="px-4 py-3 font-mono text-gray-300">â‚¹ {{ stock.price }}</td>
                             <td class="px-4 py-3 font-bold" :class="stock.change >= 0 ? 'text-green-400' : 'text-red-400'">
                                 <span class="bg-gray-900 px-2 py-1 rounded-md">{{ stock.change >= 0 ? '+' : '' }}{{ stock.change }}%</span>
                             </td>
-                            <td class="px-4 py-3 font-mono text-blue-300 font-medium">₹ {{ stock.value.toLocaleString('en-IN') }}</td>
+                            <td class="px-4 py-3 font-mono text-blue-300 font-medium">â‚¹ {{ stock.value.toLocaleString('en-IN') }}</td>
                             <td class="px-4 py-3">
                                 <span class="bg-gray-700 text-blue-300 px-2 py-1 rounded text-xs font-bold">{{ stock.moat }}</span>
                             </td>
@@ -303,11 +303,11 @@
                 const isMarketHours = totalMinutes >= 555 && totalMinutes <= 930;
                 
                 if (isMarketDay && isMarketHours) {
-                    this.marketStatus = "🟢 MARKET OPEN";
+                    this.marketStatus = "ðŸŸ¢ MARKET OPEN";
                     this.marketColor = "text-green-400";
                     this.marketBorder = "border-green-600 bg-green-900 bg-opacity-20";
                 } else {
-                    this.marketStatus = "🔴 MARKET CLOSED";
+                    this.marketStatus = "ðŸ”´ MARKET CLOSED";
                     this.marketColor = "text-red-400";
                     this.marketBorder = "border-red-600 bg-red-900 bg-opacity-20";
                 }
