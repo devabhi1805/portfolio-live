@@ -228,11 +228,11 @@ def upload_file():
         
         stocks = parse_pdf(filepath)
         if not stocks:
-            return jsonify({"error": "Could not parse stocks from this PDF. Please check format."}), 400
+            return jsonify({"error": "Format not found."}), 400
             
         save_data(stocks) # Save to JSON
         return jsonify({"stocks": stocks})
-    return jsonify({"error": "Invalid file type. Please upload a PDF."}), 400
+    return jsonify({"error": "Format not found."}), 400
 
 @app.route('/refresh_prices', methods=['POST'])
 def refresh_prices():
