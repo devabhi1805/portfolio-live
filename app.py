@@ -1,57 +1,59 @@
+from flask import Flask, request, jsonify, render_template
 import os
+import pdfplumber
 import re
-import random
 import json
+import random
 import requests
 from bs4 import BeautifulSoup
 from concurrent.futures import ThreadPoolExecutor
-from flask import Flask, request, jsonify, render_template
-import pdfplumber
+import threading
+import yfinance as yf
 
-app = Flask(__name__, template_folder='templates')
-app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
-
-DATA_FILE = os.path.join(os.path.dirname(__file__), 'portfolio_data.json')
+app = Flask(__name__)
+DATA_FILE = 'portfolio_data.json'
+MAPPING_FILE = "symbol_mapping.json"
+mapping_lock = threading.Lock()
 
 SECTOR_KNOWLEDGE = {
     "Healthcare/Pharma": {
-        "peers": ["Sun Pharma", "Cipla", "Dr. Reddy's", "Divi's Labs", "Lupin"],
-        "about": "Engaged in pharmaceutical manufacturing and API development.",
+        "peers": ["Sun Pharma", "Cipla", "Dr. Reddy's", "Divi's Labs", "Apollo Hospitals"],
+        "about": "Engaged in pharmaceutical manufacturing, R&D, and healthcare services.",
         "moat": "R&D Monopolies & Patents",
-        "risk": "FDA compliance and government price capping."
+        "risk": "Strict FDA regulations and drug trial failures."
     },
     "Chemicals": {
-        "peers": ["SRF", "Navin Fluorine", "PI Industries", "Aarti Industries", "Tata Chemicals"],
-        "about": "Manufactures specialty chemicals and advanced intermediates.",
+        "peers": ["SRF", "Aarti Industries", "Deepak Nitrite", "Tata Chemicals", "Pidilite"],
+        "about": "Involved in specialty chemicals, agrochemicals, and polymers.",
         "moat": "High Switching Costs & Scale",
-        "risk": "Crude price volatility and environmental regulations."
-    },
-    "Engineering & Capital Goods": {
-        "peers": ["L&T", "Siemens", "ABB India", "Cummins India", "Thermax"],
-        "about": "Involved in heavy engineering and EPC contracts.",
-        "moat": "High Entry Barriers & Execution",
-        "risk": "Cyclical capex slowdown and raw material inflation."
+        "risk": "Raw material price volatility (crude oil) and environmental compliance."
     },
     "Technology/IT": {
         "peers": ["TCS", "Infosys", "Wipro", "HCL Tech", "Tech Mahindra"],
-        "about": "Provides IT services, cloud infrastructure, and AI solutions.",
-        "moat": "Sticky Clients & High Switching Cost",
-        "risk": "High attrition and currency fluctuations."
+        "about": "Provides IT services, consulting, software, and digital transformation.",
+        "moat": "High Switching Costs & Talent Pool",
+        "risk": "Global recession impacting IT budgets and AI disruption."
+    },
+    "Engineering & Capital Goods": {
+        "peers": ["Larsen & Toubro", "Siemens", "ABB India", "BHEL", "Cummins India"],
+        "about": "Manufactures heavy machinery, electrical equipment, and infrastructure construction.",
+        "moat": "High Entry Barriers & Execution",
+        "risk": "Capital intensive and highly sensitive to economic cycles."
     },
     "Renewable Energy": {
-        "peers": ["Tata Power", "Adani Green", "Renew Power", "Suzlon", "Inox Wind"],
-        "about": "Focused on green energy generation and solar/wind EPC.",
-        "moat": "Long-term PPA Cash Flows",
-        "risk": "Policy changes and high debt levels."
+        "peers": ["Tata Power", "Adani Green", "Suzlon", "Borosil Renewables", "Inox Wind"],
+        "about": "Focuses on solar, wind power generation, and green infrastructure.",
+        "moat": "Government Subsidies & Long-term PPAs",
+        "risk": "Policy changes and heavy upfront capital requirement."
     },
     "Consumer Goods/Retail": {
-        "peers": ["HUL", "ITC", "Titan", "Avenue Supermarts", "Nestle India"],
-        "about": "Operates in retail, FMCG, and direct-to-consumer categories.",
-        "moat": "Deep Distribution & Pricing Power",
-        "risk": "Inflation affecting margins and intense competition."
+        "peers": ["HUL", "ITC", "Titan", "Avenue Supermarts (DMart)", "Nestle India"],
+        "about": "FMCG, retail, consumer durables, and daily-use products.",
+        "moat": "Brand Loyalty & Distribution Network",
+        "risk": "Inflation impacting consumer demand."
     },
     "Metals & Mining": {
-        "peers": ["Tata Steel", "JSW Steel", "Hindalco", "Vedanta", "NMDC"],
+        "peers": ["Tata Steel", "JSW Steel", "Hindalco", "Vedanta", "Coal India"],
         "about": "Involved in iron ore extraction, steel, and alloy production.",
         "moat": "Cost Leadership & Captive Mines",
         "risk": "Global commodity cycles and environmental regulations."
@@ -128,38 +130,88 @@ def enrich_stock_data(name, qty, curr_price, today_gain, value):
         ]
     }
 
-def fetch_screener_price(stock_obj):
-    company_name = stock_obj['name']
+def get_symbol_mapping(company_name):
+    with mapping_lock:
+        mapping = {}
+        if os.path.exists(MAPPING_FILE):
+            try:
+                with open(MAPPING_FILE, 'r') as f:
+                    mapping = json.load(f)
+            except:
+                pass
+        if company_name in mapping:
+            return mapping[company_name]
+            
     try:
-        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
         search_query = company_name.replace(" ", "+")
         search_url = f"https://www.screener.in/api/company/search/?q={search_query}&v=3"
-        
+        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
         res = requests.get(search_url, headers=headers, timeout=5)
-        data = res.json()
         
-        if data and len(data) > 0:
-            company_url = "https://www.screener.in" + data[0]['url']
-            page = requests.get(company_url, headers=headers, timeout=5)
-            
-            soup = BeautifulSoup(page.text, 'html.parser')
-            ratios = soup.find(id='top-ratios')
-            
-            if ratios:
-                for li in ratios.find_all('li'):
-                    if 'Current Price' in li.text:
-                        price_span = li.find('span', class_='number')
-                        if price_span:
-                            live_price_str = price_span.text.replace(',', '')
-                            live_price = float(live_price_str)
-                            
-                            stock_obj['price'] = round(live_price, 2)
-                            stock_obj['value'] = round(live_price * stock_obj['qty'], 2)
-                            break
+        if res.status_code == 429:
+            result = {"status": "error", "message": "Rate limited by data source. Try again."}
+        elif res.status_code != 200:
+            result = {"status": "error", "message": f"API returned {res.status_code}"}
+        else:
+            data = res.json()
+            if not data:
+                result = {"status": "error", "message": "No matching symbol found."}
+            elif len(data) == 1:
+                symbol = data[0]['url'].split('/')[2]
+                result = {"status": "resolved", "symbol": f"{symbol}.NS"}
+            else:
+                first_name = data[0]['name'].lower().replace('ltd', '').replace('limited', '').strip()
+                query_name = company_name.lower().replace('ltd', '').replace('limited', '').strip()
+                if first_name == query_name or query_name in first_name:
+                    symbol = data[0]['url'].split('/')[2]
+                    result = {"status": "resolved", "symbol": f"{symbol}.NS"}
+                else:
+                    result = {"status": "ambiguous", "message": "Multiple matches found. Cannot determine exact symbol."}
+    except requests.exceptions.Timeout:
+        result = {"status": "error", "message": "Mapping request timed out."}
     except Exception as e:
-        print(f"Error fetching screener data for {company_name}: {e}")
+        result = {"status": "error", "message": "Network error during mapping."}
         
-    return stock_obj
+    if result["status"] in ["resolved", "ambiguous"]:
+        with mapping_lock:
+            if os.path.exists(MAPPING_FILE):
+                try:
+                    with open(MAPPING_FILE, 'r') as f:
+                        mapping = json.load(f)
+                except:
+                    pass
+            mapping[company_name] = result
+            with open(MAPPING_FILE, 'w') as f:
+                json.dump(mapping, f, indent=4)
+                
+    return result
+
+def fetch_yfinance_price(symbol):
+    try:
+        t = yf.Ticker(symbol)
+        if 'lastPrice' in t.fast_info:
+            return float(t.fast_info['lastPrice'])
+        elif 'previousClose' in t.fast_info:
+            return float(t.fast_info['previousClose'])
+    except Exception:
+        pass
+    return None
+
+def process_stock_refresh(s):
+    m = get_symbol_mapping(s['name'])
+    s.pop('refresh_error', None)
+    
+    if m.get('status') == 'resolved':
+        symbol = m['symbol']
+        new_price = fetch_yfinance_price(symbol)
+        if new_price is not None:
+            s['price'] = round(new_price, 2)
+            s['value'] = round(new_price * s['qty'], 2)
+        else:
+            s['refresh_error'] = f"Data unavailable for {symbol}."
+    else:
+        s['refresh_error'] = m.get('message', 'Symbol mapping failed.')
+    return s
 
 def parse_pdf(pdf_file_path):
     stocks = []
@@ -240,25 +292,15 @@ def refresh_prices():
     if not stocks:
         return jsonify({"error": "No stocks found to refresh."}), 400
         
-    with ThreadPoolExecutor(max_workers=5) as executor:
-        updated_stocks = list(executor.map(fetch_screener_price, stocks))
-        
-    save_data(updated_stocks) # Persist the new live prices
-    return jsonify({"stocks": updated_stocks})
-
-@app.route('/get_portfolio', methods=['GET'])
-def get_portfolio():
-    stocks = load_data()
-    return jsonify({"stocks": stocks})
+    try:
+        with ThreadPoolExecutor(max_workers=5) as executor:
+            updated_stocks = list(executor.map(process_stock_refresh, stocks))
+            
+        save_data(updated_stocks) # Persist the new live prices
+        return jsonify({"stocks": updated_stocks})
+    except Exception as e:
+        print(f"Refresh prices crashed: {e}")
+        return jsonify({"error": "Failed to refresh prices. Please try again."}), 500
 
 if __name__ == '__main__':
-    import threading
-    import webbrowser
-    import time
-    
-    def open_browser():
-        time.sleep(1.5)
-        webbrowser.open("http://127.0.0.1:5000")
-        
-    threading.Thread(target=open_browser, daemon=True).start()
     app.run(host='0.0.0.0', port=5000, debug=False, use_reloader=False)
