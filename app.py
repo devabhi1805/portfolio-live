@@ -302,5 +302,19 @@ def refresh_prices():
         print(f"Refresh prices crashed: {e}")
         return jsonify({"error": "Failed to refresh prices. Please try again."}), 500
 
+@app.route('/get_portfolio', methods=['GET'])
+def get_portfolio():
+    stocks = load_data()
+    return jsonify({"stocks": stocks})
+
 if __name__ == '__main__':
+    import threading
+    import webbrowser
+    import time
+    
+    def open_browser():
+        time.sleep(1.5)
+        webbrowser.open("http://127.0.0.1:5000")
+        
+    threading.Thread(target=open_browser, daemon=True).start()
     app.run(host='0.0.0.0', port=5000, debug=False, use_reloader=False)
