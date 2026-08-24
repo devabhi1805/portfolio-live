@@ -7,46 +7,27 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <style>
-        .marquee {
-            white-space: nowrap;
-            overflow: hidden;
-            box-sizing: border-box;
-        }
-        .marquee p {
-            display: inline-block;
-            padding-left: 100%;
-            animation: marquee 25s linear infinite;
-        }
-        @keyframes marquee {
-            0%   { transform: translate(0, 0); }
-            100% { transform: translate(-100%, 0); }
-        }
-        .no-scrollbar::-webkit-scrollbar {
-            display: none;
-        }
-        .no-scrollbar {
-            -ms-overflow-style: none;
-            scrollbar-width: none;
-        }
+        .marquee { white-space: nowrap; overflow: hidden; box-sizing: border-box; }
+        .marquee p { display: inline-block; padding-left: 100%; animation: marquee 25s linear infinite; }
+        @keyframes marquee { 0% { transform: translate(0, 0); } 100% { transform: translate(-100%, 0); } }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
 </head>
 <body class="bg-gray-900 text-white font-sans antialiased h-screen flex flex-col">
 {% raw %}
 <div id="app" class="flex flex-col h-full overflow-hidden">
-    <!-- Top Bar -->
     <div class="bg-gray-800 text-sm font-semibold border-b border-gray-700 p-2 flex shrink-0">
         <div class="flex-1 marquee text-green-400">
             <p>
-                [+] <b>GLOBAL INDICES (LIVE):</b> NIFTY 50: 24,500 (+0.5%) &nbsp;|&nbsp; NSE EMERGE: 14,200 (+0.6%) &nbsp;|&nbsp; S&P 500: 5,100 (+1.2%) &nbsp;|&nbsp; NASDAQ: 16,200 (+1.5%) &nbsp;|&nbsp; FTSE 100: 7,900 (-0.2%) &nbsp;|&nbsp; NIKKEI 225: 39,000 (+0.8%) 
+                [+] <b>GLOBAL INDICES (LIVE):</b> NIFTY 50: 24,500 (+0.5%) | NSE EMERGE: 14,200 (+0.6%) | S&P 500: 5,100 (+1.2%) | NASDAQ: 16,200 (+1.5%) | FTSE 100: 7,900 (-0.2%) | NIKKEI 225: 39,000 (+0.8%) 
                 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-                [Oil] <b>COMMODITIES (LIVE):</b> GOLD: $2,350/oz (+0.4%) &nbsp;|&nbsp; SILVER: $28.5/oz (+1.1%) &nbsp;|&nbsp; CRUDE OIL: $82/bbl (-0.5%) &nbsp;|&nbsp; NATURAL GAS: $2.1/MMBtu (+2.0%) &nbsp;|&nbsp; COPPER: $4.5/lb (+0.3%)
+                [Oil] <b>COMMODITIES (LIVE):</b> GOLD: $2,350/oz (+0.4%) | SILVER: $28.5/oz (+1.1%) | CRUDE OIL: $82/bbl (-0.5%) | NATURAL GAS: $2.1/MMBtu (+2.0%) | COPPER: $4.5/lb (+0.3%)
             </p>
         </div>
     </div>
 
-    <!-- Header & Upload -->
     <div class="p-4 shrink-0 flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 xl:gap-6 border-b border-gray-700 bg-gray-900 shadow-md z-10 w-full">
-        <!-- Title & Stats -->
         <div class="text-left w-full xl:w-auto shrink-0">
             <h1 class="text-2xl sm:text-3xl font-extrabold text-blue-400 tracking-tight leading-tight">FINAVENUE PORTFOLIO</h1>
             <div class="text-xs sm:text-sm text-gray-400 flex flex-wrap items-center gap-2 sm:gap-3 mt-2">
@@ -59,18 +40,13 @@
             </div>
         </div>
         
-        <!-- Controls & Actions -->
         <div class="flex flex-wrap items-center justify-start xl:justify-end gap-3 sm:gap-4 w-full">
-            
-            <!-- Sector Filter -->
             <div class="flex items-center gap-2 bg-gray-800 px-3 py-1.5 rounded-lg border border-gray-700 shrink-0">
                 <label class="text-sm text-gray-400 font-semibold whitespace-nowrap">Sector:</label>
                 <select v-model="selectedSector" class="bg-transparent text-white text-sm focus:outline-none cursor-pointer">
                     <option v-for="sec in uniqueSectors" :key="sec" :value="sec" class="bg-gray-800">{{ sec }}</option>
                 </select>
             </div>
-            
-            <!-- Action Buttons -->
             <div class="flex items-center gap-2 shrink-0">
                 <button @click="exportToCSV" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-sm font-bold transition shadow-sm whitespace-nowrap">
                     Export CSV
@@ -80,8 +56,6 @@
                     {{ refreshing ? 'Fetching...' : 'Refresh' }}
                 </button>
             </div>
-
-            <!-- Upload Form -->
             <div class="bg-gray-800 p-1.5 rounded-lg flex items-center gap-2 border border-gray-600 shadow-sm shrink-0">
                 <input type="file" ref="fileInput" accept=".pdf" class="text-sm text-gray-400 max-w-[200px] file:mr-2 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-bold file:bg-gray-700 file:text-white hover:file:bg-gray-600 file:cursor-pointer cursor-pointer"/>
                 <button @click="uploadFile" :disabled="uploading" class="bg-green-600 hover:bg-green-500 text-white px-4 py-2 rounded-md text-sm font-bold transition disabled:opacity-50 whitespace-nowrap">
@@ -91,7 +65,6 @@
         </div>
     </div>
 
-    <!-- Error/Success Banner -->
     <div v-if="error" class="bg-red-900 text-white p-2 text-center text-sm font-bold">
         {{ error }}
     </div>
@@ -99,21 +72,20 @@
         {{ successMsg }}
     </div>
 
-    <!-- Main Data Container -->
     <div class="flex-1 overflow-auto p-4 sm:p-6 relative bg-gray-950">
-        
-        <!-- Empty State -->
         <div v-if="filteredStocks.length === 0" class="flex flex-col items-center justify-center h-full text-center p-8 bg-gray-900 border border-gray-800 rounded-xl shadow-inner">
             <p class="text-gray-400 mb-2 text-lg">No stocks found.</p>
             <p class="text-blue-400 font-bold">Please click 'Upload PDF' in the top right to fetch your live Qty & Prices.</p>
         </div>
         
-        <!-- Mobile & Tablet Cards Layout (< 1024px) -->
         <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-4 lg:hidden">
             <div v-for="stock in filteredStocks" :key="stock.name" class="bg-gray-800 rounded-xl p-4 border border-gray-700 shadow-md hover:border-gray-600 transition flex flex-col gap-3">
                 <div class="flex justify-between items-start gap-2">
                     <div class="flex-1 min-w-0">
-                        <h3 class="font-bold text-white text-base truncate">{{ stock.name }}</h3>
+                        <h3 class="font-bold text-white text-base truncate">
+                            {{ stock.name }} 
+                            <span v-if="stock.refresh_error" title="Refresh Failed" class="text-red-500 ml-1">⚠️</span>
+                        </h3>
                         <span class="text-xs text-gray-400 truncate block">{{ stock.sector }}</span>
                     </div>
                     <button @click="openModal(stock)" class="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition shrink-0 shadow-sm">
@@ -140,6 +112,7 @@
                         </span>
                     </div>
                 </div>
+                <div v-if="stock.refresh_error" class="text-red-400 text-[10px] mt-1">{{ stock.refresh_error }}</div>
                 <div class="mt-1">
                     <span class="inline-block bg-gray-700 text-blue-300 px-2.5 py-1 rounded-md text-[11px] font-bold tracking-wide shadow-sm border border-gray-600">
                         {{ stock.moat }}
@@ -148,7 +121,6 @@
             </div>
         </div>
 
-        <!-- Desktop Table Layout (>= 1024px) -->
         <div v-if="filteredStocks.length > 0" class="hidden lg:block bg-gray-800 rounded-xl shadow-lg border border-gray-700 overflow-hidden">
             <div class="overflow-x-auto">
                 <table class="w-full text-left text-sm whitespace-nowrap">
@@ -166,7 +138,10 @@
                     </thead>
                     <tbody class="divide-y divide-gray-700/50">
                         <tr v-for="stock in filteredStocks" :key="stock.name" class="hover:bg-gray-750 transition-colors">
-                            <td class="px-4 py-3 font-semibold text-gray-100">{{ stock.name }}</td>
+                            <td class="px-4 py-3 font-semibold text-gray-100">
+                                {{ stock.name }}
+                                <span v-if="stock.refresh_error" :title="stock.refresh_error" class="text-red-500 ml-1 cursor-help">⚠️</span>
+                            </td>
                             <td class="px-4 py-3 text-gray-400 text-xs">{{ stock.sector }}</td>
                             <td class="px-4 py-3 font-mono text-gray-300">{{ stock.qty }}</td>
                             <td class="px-4 py-3 font-mono text-gray-300">Rs. {{ stock.price }}</td>
@@ -189,7 +164,6 @@
         </div>
     </div>
 
-    <!-- Modal -->
     <div v-if="selectedStock" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-2 md:p-4">
         <div class="bg-gray-800 rounded-lg shadow-xl w-full max-w-4xl overflow-hidden flex flex-col max-h-[95vh] md:max-h-screen">
             <div class="p-4 border-b border-gray-700 flex justify-between items-center bg-gray-900 shrink-0">
@@ -197,21 +171,15 @@
                 <button @click="selectedStock = null" class="text-gray-400 hover:text-white text-3xl leading-none">&times;</button>
             </div>
             <div class="p-4 md:p-6 overflow-y-auto">
-                
-                <!-- About & Risk Factor -->
                 <div class="bg-gray-700 p-4 rounded mb-6 border-l-4 border-blue-500">
                     <h3 class="font-bold text-white mb-2 text-lg">About Company & Working</h3>
                     <p class="text-sm text-gray-300 mb-4">{{ selectedStock.about }}</p>
-                    
                     <h3 class="font-bold text-blue-300 mb-1">Company MOAT</h3>
                     <p class="text-sm text-gray-300 mb-4 font-bold">{{ selectedStock.moat }}</p>
-                    
                     <h3 class="font-bold text-red-400 mb-1">Risk Factors</h3>
                     <p class="text-sm text-gray-300">{{ selectedStock.risk }}</p>
                 </div>
-
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-                    <!-- Fundamentals -->
                     <div class="bg-gray-700 p-4 rounded border border-gray-600">
                         <h3 class="font-bold text-green-400 mb-2 border-b border-gray-600 pb-1">Fundamentals & Results</h3>
                         <ul class="text-sm space-y-2 text-gray-300">
@@ -220,7 +188,6 @@
                             </li>
                         </ul>
                     </div>
-                    <!-- Peers -->
                     <div class="bg-gray-700 p-4 rounded border border-gray-600">
                         <h3 class="font-bold text-yellow-400 mb-2 border-b border-gray-600 pb-1">Verified Top 5 Peers</h3>
                         <ul class="text-sm space-y-2 text-gray-300 list-disc list-inside">
@@ -228,8 +195,6 @@
                         </ul>
                     </div>
                 </div>
-
-                <!-- News -->
                 <div class="mt-4 md:mt-6 bg-gray-700 p-4 rounded border border-gray-600">
                     <h3 class="font-bold text-red-400 mb-2 border-b border-gray-600 pb-1">Latest News & Updates</h3>
                     <ul class="text-sm space-y-2 text-gray-300 list-disc list-inside">
@@ -243,7 +208,6 @@
 
 <script>
     const { createApp } = Vue;
-
     createApp({
         data() {
             return {
@@ -266,9 +230,7 @@
                 return ['All', ...Array.from(sectors).sort()];
             },
             filteredStocks() {
-                if (this.selectedSector === 'All') {
-                    return this.stocks;
-                }
+                if (this.selectedSector === 'All') return this.stocks;
                 return this.stocks.filter(s => s.sector === this.selectedSector);
             },
             totalPortfolioValue() {
@@ -279,25 +241,19 @@
         mounted() {
             fetch('/get_portfolio?t=' + Date.now())
                 .then(res => res.json())
-                .then(data => {
-                    if(data.stocks) this.stocks = data.stocks;
-                });
-                
+                .then(data => { if(data.stocks) this.stocks = data.stocks; });
             this.updateClock();
             setInterval(this.updateClock, 1000);
         },
         methods: {
             updateClock() {
                 const now = new Date();
-                
                 const options = { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true };
                 this.currentTime = now.toLocaleString('en-IN', options);
-                
                 const day = now.getDay();
                 const hours = now.getHours();
                 const minutes = now.getMinutes();
                 const totalMinutes = (hours * 60) + minutes;
-                
                 const isMarketDay = day >= 1 && day <= 5;
                 const isMarketHours = totalMinutes >= 555 && totalMinutes <= 930;
                 
@@ -311,28 +267,14 @@
                     this.marketBorder = "border-red-600 bg-red-900 bg-opacity-20";
                 }
             },
-            openModal(stock) {
-                this.selectedStock = stock;
-            },
+            openModal(stock) { this.selectedStock = stock; },
             exportToCSV() {
-                if (this.filteredStocks.length === 0) {
-                    this.error = "No data to export!";
-                    return;
-                }
+                if (this.filteredStocks.length === 0) { this.error = "No data to export!"; return; }
                 const headers = ["Stock Name", "Sector", "Qty", "Curr Price", "Today's Gain (%)", "Current Value", "MOAT"];
                 const rows = this.filteredStocks.map(s => [
-                    `"${s.name}"`, 
-                    `"${s.sector}"`, 
-                    s.qty, 
-                    s.price, 
-                    s.change, 
-                    s.value, 
-                    `"${s.moat}"`
+                    `"${s.name}"`, `"${s.sector}"`, s.qty, s.price, s.change, s.value, `"${s.moat}"`
                 ]);
-                const csvContent = "data:text/csv;charset=utf-8," 
-                    + headers.join(",") + "\n" 
-                    + rows.map(e => e.join(",")).join("\n");
-                
+                const csvContent = "data:text/csv;charset=utf-8," + headers.join(",") + "\n" + rows.map(e => e.join(",")).join("\n");
                 const encodedUri = encodeURI(csvContent);
                 const link = document.createElement("a");
                 link.setAttribute("href", encodedUri);
@@ -345,20 +287,15 @@
             },
             async refreshLivePrices() {
                 if (this.stocks.length === 0) return;
-                
                 this.refreshing = true;
                 this.error = null;
                 this.successMsg = null;
-                
                 try {
                     const response = await fetch('/refresh_prices', {
                         method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
+                        headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ stocks: this.stocks })
                     });
-                    
                     const data = await response.json();
                     if (response.ok) {
                         this.stocks = data.stocks;
@@ -375,33 +312,18 @@
             },
             async uploadFile() {
                 const fileInput = this.$refs.fileInput;
-                if (!fileInput.files.length) {
-                    this.error = "Please select a PDF file first.";
-                    return;
-                }
-                
+                if (!fileInput.files.length) { this.error = "Please select a PDF file first."; return; }
                 this.error = null;
                 this.successMsg = null;
                 this.uploading = true;
-                
                 const formData = new FormData();
                 formData.append("pdf_file", fileInput.files[0]);
-                
                 try {
-                    const response = await fetch('/upload', {
-                        method: 'POST',
-                        body: formData
-                    });
-                    
+                    const response = await fetch('/upload', { method: 'POST', body: formData });
                     let data;
-                    try {
-                        data = await response.json();
-                    } catch (jsonError) {
-                        this.error = "Format not found.";
-                        this.uploading = false;
-                        return;
+                    try { data = await response.json(); } catch (jsonError) {
+                        this.error = "Format not found."; this.uploading = false; return;
                     }
-                    
                     if (response.ok) {
                         this.stocks = data.stocks;
                         fileInput.value = ""; 
