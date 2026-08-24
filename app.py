@@ -197,20 +197,48 @@ def fetch_yfinance_price(symbol):
         pass
     return None
 
+def scrape_screener_price(company_name):
+    try:
+        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
+        search_query = company_name.replace(" ", "+")
+        search_url = f"https://www.screener.in/api/company/search/?q={search_query}&v=3"
+        res = requests.get(search_url, headers=headers, timeout=5)
+        if res.status_code == 200:
+            data = res.json()
+            if data and len(data) > 0:
+                company_url = "https://www.screener.in" + data[0]['url']
+                page = requests.get(company_url, headers=headers, timeout=5)
+                soup = BeautifulSoup(page.text, 'html.parser')
+                ratios = soup.find(id='top-ratios')
+                if ratios:
+                    for li in ratios.find_all('li'):
+                        if 'Current Price' in li.text:
+                            price_span = li.find('span', class_='number')
+                            if price_span:
+                                return float(price_span.text.replace(',', ''))
+    except Exception:
+        pass
+    return None
+
 def process_stock_refresh(s):
     m = get_symbol_mapping(s['name'])
     s.pop('refresh_error', None)
     
+    new_price = None
     if m.get('status') == 'resolved':
         symbol = m['symbol']
         new_price = fetch_yfinance_price(symbol)
-        if new_price is not None:
-            s['price'] = round(new_price, 2)
-            s['value'] = round(new_price * s['qty'], 2)
-        else:
-            s['refresh_error'] = f"Data unavailable for {symbol}."
+        
+    # FALLBACK TO SCREENER IF YFINANCE FAILS OR MAPPING FAILS
+    if new_price is None:
+        new_price = scrape_screener_price(s['name'])
+        
+    if new_price is not None:
+        s['price'] = round(new_price, 2)
+        s['value'] = round(new_price * s['qty'], 2)
     else:
-        s['refresh_error'] = m.get('message', 'Symbol mapping failed.')
+        s['refresh_error'] = "Data unavailable on both Yahoo & Screener."
+        
     return s
 
 def parse_pdf(pdf_file_path):
