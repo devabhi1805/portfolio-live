@@ -229,7 +229,6 @@ def process_stock_refresh(s):
         symbol = m['symbol']
         new_price = fetch_yfinance_price(symbol)
         
-    # FALLBACK TO SCREENER IF YFINANCE FAILS OR MAPPING FAILS
     if new_price is None:
         new_price = scrape_screener_price(s['name'])
         
@@ -316,16 +315,27 @@ def upload_file():
 
 @app.route('/refresh_prices', methods=['POST'])
 def refresh_prices():
-    stocks = load_data()
-    if not stocks:
-        return jsonify({"error": "No stocks found to refresh."}), 400
+    req_data = request.get_json()
+    if not req_data or 'stocks' not in req_data:
+        return jsonify({"error": "No stocks provided in request."}), 400
         
+    stocks_chunk = req_data['stocks']
+    
     try:
         with ThreadPoolExecutor(max_workers=5) as executor:
-            updated_stocks = list(executor.map(process_stock_refresh, stocks))
+            updated_chunk = list(executor.map(process_stock_refresh, stocks_chunk))
             
-        save_data(updated_stocks) # Persist the new live prices
-        return jsonify({"stocks": updated_stocks})
+        # Update the main database file
+        all_stocks = load_data()
+        if all_stocks:
+            for updated_stock in updated_chunk:
+                for i, s in enumerate(all_stocks):
+                    if s['name'] == updated_stock['name']:
+                        all_stocks[i] = updated_stock
+                        break
+            save_data(all_stocks)
+            
+        return jsonify({"stocks": updated_chunk})
     except Exception as e:
         print(f"Refresh prices crashed: {e}")
         return jsonify({"error": "Failed to refresh prices. Please try again."}), 500
